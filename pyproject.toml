@@ -3,7 +3,7 @@ authors = [{name = "jiachengxu", email = "xujiacheng1016@hotmail.com"}]
 name = "Game_New_Protector"
 requires-python = ">= 3.11"
 version = "0.1.0"
-dependencies = [ "fastapi>=0.115.12,<0.116", "uvicorn>=0.34.3,<0.35", "requests>=2.32.3,<3"]
+dependencies = [ "fastapi>=0.115.12,<0.116", "uvicorn>=0.34.3,<0.35", "requests>=2.32.3,<3", "openai>=1.83.0,<2"]
 
 [build-system]
 build-backend = "hatchling.build"
