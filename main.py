@@ -59,7 +59,7 @@ initial_cities_data = {
         "co2": 40, 
         "transportation": "bicycle", 
         "energy_source": "solar",
-        "position": {"x": 150, "y": 110}
+        "position": {"x": 300, "y": 180}
     },
     "gothenburg": {
         "name": "Gothenburg", 
@@ -67,7 +67,7 @@ initial_cities_data = {
         "co2": 45, 
         "transportation": "bicycle", 
         "energy_source": "solar",
-        "position": {"x": 70, "y": 180}
+        "position": {"x": 150, "y": 300}
     },
     "malmo": {
         "name": "Malmö", 
@@ -75,7 +75,7 @@ initial_cities_data = {
         "co2": 50, 
         "transportation": "bicycle", 
         "energy_source": "solar",
-        "position": {"x": 90, "y": 250}
+        "position": {"x": 180, "y": 420}
     }
 }
 
