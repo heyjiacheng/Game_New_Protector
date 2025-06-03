@@ -24,21 +24,26 @@
         }
         
         body {
-            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+            background: linear-gradient(135deg, #1a2a6c, #cd1e98, #1a2a6c);
             color: white;
             min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
         }
         
         header {
             text-align: center;
             padding: 20px 0;
             margin-bottom: 30px;
+            width: 100%;
         }
         
         h1 {
@@ -53,16 +58,11 @@
         }
         
         .game-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
             gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        @media (max-width: 768px) {
-            .game-container {
-                grid-template-columns: 1fr;
-            }
+            min-width: 0;
         }
         
         .panel {
@@ -75,7 +75,7 @@
         
         .stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(1, 1fr);
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -101,6 +101,7 @@
         .money { color: #f1c40f; }
         .happiness { color: #2ecc71; }
         .co2 { color: #e74c3c; }
+        .year { color: #3498db; }
         
         .progress-bar {
             height: 10px;
@@ -115,8 +116,8 @@
         }
         
         .controls {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            display: flex;
+            flex-direction: column;
             gap: 15px;
         }
         
@@ -175,7 +176,7 @@
         }
         
         .news-panel {
-            grid-column: 1 / -1;
+            grid-column: span 1;
         }
         
         .news-card {
@@ -211,8 +212,86 @@
         }
         
         .chart-container {
-            height: 300px;
-            margin-top: 20px;
+            height: 200px;
+            margin: 15px 0;
+        }
+        
+        .map-container {
+            display: flex;
+            position: relative;
+            height: 450px;
+        }
+        
+        .sweden-map {
+            position: relative;
+            height: 100%;
+            flex: 2;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/SwedenOutlineBlack.png/600px-SwedenOutlineBlack.png') no-repeat center;
+            background-size: contain;
+        }
+        
+        .map-sidebar {
+            flex: 1;
+            padding: 15px;
+            background: rgba(52, 73, 94, 0.7);
+            border-radius: 0 10px 10px 0;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+        
+        .city-marker {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: var(--secondary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid white;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+        }
+        
+        .city-marker:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+        
+        .city-marker.active {
+            background: var(--success);
+        }
+        
+        .city-marker.eliminated {
+            background: var(--danger);
+            opacity: 0.7;
+        }
+        
+        .city-name {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            white-space: nowrap;
+            top: -20px;
+            font-size: 0.9rem;
+        }
+        
+        .city-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .city-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .no-city-selected {
+            text-align: center;
+            padding: 30px;
+            color: var(--light);
+            font-style: italic;
         }
         
         .game-over {
@@ -263,6 +342,47 @@
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
+        
+        .projected-changes {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            border: 1px dashed rgba(255,255,255,0.3);
+        }
+        
+        .projected-changes h4 {
+            margin: 0 0 10px 0;
+            color: #3498db;
+            font-size: 0.9rem;
+        }
+        
+        .projected-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+        }
+        
+        .projected-item .label {
+            color: #bdc3c7;
+        }
+        
+        .projected-item .value {
+            font-weight: bold;
+        }
+        
+        .projected-item .value.positive {
+            color: #2ecc71;
+        }
+        
+        .projected-item .value.negative {
+            color: #e74c3c;
+        }
+        
+        .projected-item .value.neutral {
+            color: #f1c40f;
+        }
     </style>
 </head>
 <body>
@@ -276,68 +396,35 @@
             <div class="panel stats-panel">
                 <div class="stats">
                     <div class="stat-card">
-                        <h3>金钱 (SEK)</h3>
+                        <h3>游戏年份</h3>
+                        <div class="stat-value year" id="year">1</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>国家金钱 (SEK)</h3>
                         <div class="stat-value money" id="money">1000</div>
                         <div class="progress-bar">
                             <div class="progress-fill money" style="width: 100%; background: #f1c40f;"></div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <h3>幸福度</h3>
-                        <div class="stat-value happiness" id="happiness">50</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill happiness" style="width: 50%; background: #2ecc71;"></div>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>CO2 排放</h3>
-                        <div class="stat-value co2" id="co2">50</div>
-                        <div class="progress-bar">
-                            <div class="progress-fill co2" style="width: 50%; background: #e74c3c;"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="controls">
-                    <div class="control-group">
-                        <h3>交通方式</h3>
-                        <div class="buttons" id="transportation-buttons">
-                            <button data-type="bicycle">自行车</button>
-                            <button data-type="scooter">电动滑板车</button>
-                            <button data-type="car">汽车</button>
-                            <button data-type="electronic_car">电动汽车</button>
-                            <button data-type="bus">公交车</button>
-                            <button data-type="electronic_bus">电动公交</button>
-                            <button data-type="train">火车</button>
-                            <button data-type="airplane">飞机</button>
-                            <button data-type="potogan">未来交通</button>
-                        </div>
-                    </div>
-                    
-                    <div class="control-group">
-                        <h3>能源来源</h3>
-                        <div class="buttons" id="energy-buttons">
-                            <button data-type="mining">采矿</button>
-                            <button data-type="water">水力</button>
-                            <button data-type="nuclear">核能</button>
-                            <button data-type="solar">太阳能</button>
-                            <button data-type="wind">风能</button>
-                            <button data-type="automic">自动化能源</button>
-                            <button data-type="anti_material">反物质能源</button>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="action-buttons">
-                    <button class="btn-primary pulse" id="get-news">获取新闻事件</button>
+                    <button class="btn-primary pulse" id="next-round">下一回合</button>
                     <button class="btn-danger" id="restart">重新开始</button>
                 </div>
             </div>
             
             <div class="panel">
-                <h2>瑞典城市状态</h2>
-                <div class="chart-container">
-                    <canvas id="city-chart"></canvas>
+                <h2>瑞典地图</h2>
+                <div class="map-container">
+                    <div class="sweden-map" id="sweden-map">
+                        <!-- 城市标记会通过JS动态添加 -->
+                    </div>
+                    <div class="map-sidebar" id="city-details">
+                        <div class="no-city-selected">
+                            请点击地图上的城市查看详情
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -347,14 +434,14 @@
                     <div class="news-card">
                         <div class="news-title">欢迎来到瑞典城市可持续发展游戏</div>
                         <div class="news-description">
-                            作为城市管理者，您的任务是平衡经济发展、市民幸福度和环境保护。
-                            点击"获取新闻事件"按钮开始游戏，您将面临各种事件和挑战。
-                            通过选择不同的交通方式和能源来源来影响城市的发展。
+                            作为瑞典国家管理者，您的任务是平衡经济发展、市民幸福度和环境保护。
+                            首先选择各个城市的交通方式和能源来源，然后点击"下一回合"按钮进入下一年度。
+                            每年都会发生新的事件，请做出明智的决策！
                         </div>
                         <div class="effects">
-                            <div class="effect">目标：保持金钱 > 0</div>
-                            <div class="effect">目标：保持幸福度 > 0</div>
-                            <div class="effect">目标：保持CO2 < 100</div>
+                            <div class="effect">目标：保持国家金钱 > 0</div>
+                            <div class="effect">目标：防止城市幸福度降至 0</div>
+                            <div class="effect">目标：防止城市CO2达到 100</div>
                         </div>
                     </div>
                 </div>
@@ -365,53 +452,308 @@
     <div class="game-over" id="game-over">
         <div class="game-over-content">
             <h2>游戏结束</h2>
-            <p id="game-over-message">您的城市未能实现可持续发展</p>
+            <p id="game-over-message">您的国家未能实现可持续发展</p>
             <button class="btn-primary" id="restart-game">重新开始游戏</button>
         </div>
     </div>
+    
+    <!-- 城市详情模板 (隐藏) -->
+    <template id="city-template">
+        <div class="city-info">
+            <h3 class="city-title">城市名称</h3>
+            <div class="city-stats">
+                <div class="stat-card">
+                    <h3>幸福度</h3>
+                    <div class="stat-value happiness city-happiness">50</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill happiness" style="width: 50%; background: #2ecc71;"></div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h3>CO2 排放</h3>
+                    <div class="stat-value co2 city-co2">50</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill co2" style="width: 50%; background: #e74c3c;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <canvas class="city-chart"></canvas>
+            </div>
+            
+            <div class="control-group">
+                <h3>交通方式</h3>
+                <div class="buttons transportation-buttons">
+                    <button data-type="bicycle">自行车</button>
+                    <button data-type="scooter">电动滑板车</button>
+                    <button data-type="car">汽车</button>
+                    <button data-type="electronic_car">电动汽车</button>
+                    <button data-type="bus">公交车</button>
+                    <button data-type="electronic_bus">电动公交</button>
+                    <button data-type="train">火车</button>
+                    <button data-type="airplane">飞机</button>
+                    <button data-type="potogan">未来交通</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>能源来源</h3>
+                <div class="buttons energy-buttons">
+                    <button data-type="mining">采矿</button>
+                    <button data-type="water">水力</button>
+                    <button data-type="nuclear">核能</button>
+                    <button data-type="solar">太阳能</button>
+                    <button data-type="wind">风能</button>
+                    <button data-type="automic">自动化能源</button>
+                    <button data-type="anti_material">反物质能源</button>
+                </div>
+            </div>
+            
+            <div class="projected-changes">
+                <h4>本回合预期变化:</h4>
+                <div class="projected-item">
+                    <span class="label">金钱:</span>
+                    <span class="value neutral projected-money">0</span>
+                </div>
+                <div class="projected-item">
+                    <span class="label">幸福度:</span>
+                    <span class="value neutral projected-happiness">0</span>
+                </div>
+                <div class="projected-item">
+                    <span class="label">CO2 排放:</span>
+                    <span class="value neutral projected-co2">0</span>
+                </div>
+            </div>
+        </div>
+    </template>
     
     <script>
         // 游戏状态
         let gameState = {
             money: 1000,
-            happiness: 50,
-            co2: 50,
-            transportation: "bicycle",
-            energy_source: "solar",
+            year: 1,
+            cities: {
+                stockholm: {
+                    name: "Stockholm",
+                    happiness: 60,
+                    co2: 40,
+                    transportation: "bicycle",
+                    energy_source: "solar",
+                    eliminated: false,
+                    position: {x: 150, y: 110}
+                },
+                gothenburg: {
+                    name: "Gothenburg",
+                    happiness: 50,
+                    co2: 45,
+                    transportation: "bicycle",
+                    energy_source: "solar",
+                    eliminated: false,
+                    position: {x: 70, y: 180}
+                },
+                malmo: {
+                    name: "Malmö",
+                    happiness: 55,
+                    co2: 50,
+                    transportation: "bicycle",
+                    energy_source: "solar",
+                    eliminated: false,
+                    position: {x: 90, y: 250}
+                }
+            },
             game_over: false
         };
         
-        // 图表实例
-        let cityChart;
+        // 当前选中的城市
+        let selectedCity = null;
+        
+        // 各城市图表实例
+        const cityCharts = {};
         
         // DOM 元素
+        const yearElement = document.getElementById('year');
         const moneyElement = document.getElementById('money');
-        const happinessElement = document.getElementById('happiness');
-        const co2Element = document.getElementById('co2');
         const newsContainer = document.getElementById('news-container');
-        const getNewsButton = document.getElementById('get-news');
+        const nextRoundButton = document.getElementById('next-round');
         const restartButton = document.getElementById('restart');
         const gameOverScreen = document.getElementById('game-over');
         const gameOverMessage = document.getElementById('game-over-message');
         const restartGameButton = document.getElementById('restart-game');
+        const swedenMap = document.getElementById('sweden-map');
+        const cityDetails = document.getElementById('city-details');
+        const cityTemplate = document.getElementById('city-template');
         
-        // 初始化图表
-        function initChart() {
-            const ctx = document.getElementById('city-chart').getContext('2d');
-            cityChart = new Chart(ctx, {
+        // 初始化地图上的城市标记
+        function initCityMarkers() {
+            swedenMap.innerHTML = '';
+            
+            for (const [cityId, city] of Object.entries(gameState.cities)) {
+                const marker = document.createElement('div');
+                marker.className = `city-marker ${city.eliminated ? 'eliminated' : ''}`;
+                marker.id = `marker-${cityId}`;
+                marker.dataset.cityId = cityId;
+                
+                marker.style.left = `${city.position.x}px`;
+                marker.style.top = `${city.position.y}px`;
+                
+                const cityName = document.createElement('div');
+                cityName.className = 'city-name';
+                cityName.textContent = city.name;
+                
+                marker.appendChild(cityName);
+                swedenMap.appendChild(marker);
+                
+                marker.addEventListener('click', () => {
+                    selectCity(cityId);
+                });
+            }
+        }
+        
+        // 选择一个城市
+        function selectCity(cityId) {
+            if (gameState.cities[cityId].eliminated) {
+                alert(`${gameState.cities[cityId].name}已被淘汰，无法选择`);
+                return;
+            }
+            
+            // 更新选中状态
+            selectedCity = cityId;
+            
+            // 更新标记样式
+            document.querySelectorAll('.city-marker').forEach(marker => {
+                marker.classList.remove('active');
+            });
+            document.getElementById(`marker-${cityId}`).classList.add('active');
+            
+            // 显示城市详情
+            updateCityDetails();
+        }
+        
+        // 更新城市详情面板
+        function updateCityDetails() {
+            if (!selectedCity) {
+                cityDetails.innerHTML = '<div class="no-city-selected">请点击地图上的城市查看详情</div>';
+                return;
+            }
+            
+            const city = gameState.cities[selectedCity];
+            
+            // 克隆模板
+            const cityInfo = cityTemplate.content.cloneNode(true);
+            
+            // 更新城市信息
+            cityInfo.querySelector('.city-title').textContent = city.name;
+            cityInfo.querySelector('.city-happiness').textContent = city.happiness;
+            cityInfo.querySelector('.city-co2').textContent = city.co2;
+            
+            // 更新进度条
+            cityInfo.querySelector('.progress-fill.happiness').style.width = `${city.happiness}%`;
+            cityInfo.querySelector('.progress-fill.co2').style.width = `${city.co2}%`;
+            
+            // 获取预期变化
+            const projectedEffects = gameState.current_round_changes?.projected_effects?.[selectedCity] || {
+                money: 0, 
+                happiness: 0, 
+                co2: 0
+            };
+            
+            // 更新预期变化显示
+            const projectedMoney = cityInfo.querySelector('.projected-money');
+            const projectedHappiness = cityInfo.querySelector('.projected-happiness');
+            const projectedCo2 = cityInfo.querySelector('.projected-co2');
+            
+            // 设置金钱值和样式
+            projectedMoney.textContent = projectedEffects.money > 0 ? `+${projectedEffects.money}` : projectedEffects.money;
+            projectedMoney.className = `value ${projectedEffects.money > 0 ? 'positive' : projectedEffects.money < 0 ? 'negative' : 'neutral'}`;
+            
+            // 设置幸福度值和样式
+            projectedHappiness.textContent = projectedEffects.happiness > 0 ? `+${projectedEffects.happiness}` : projectedEffects.happiness;
+            projectedHappiness.className = `value ${projectedEffects.happiness > 0 ? 'positive' : projectedEffects.happiness < 0 ? 'negative' : 'neutral'}`;
+            
+            // 设置CO2值和样式 (CO2减少是好事，所以颜色相反)
+            projectedCo2.textContent = projectedEffects.co2 > 0 ? `+${projectedEffects.co2}` : projectedEffects.co2;
+            projectedCo2.className = `value ${projectedEffects.co2 < 0 ? 'positive' : projectedEffects.co2 > 0 ? 'negative' : 'neutral'}`;
+            
+            // 更新按钮状态 - 使用current_round_changes中的设置或城市当前设置
+            const currentTransport = gameState.current_round_changes?.transportation?.[selectedCity] || city.transportation;
+            const currentEnergy = gameState.current_round_changes?.energy_source?.[selectedCity] || city.energy_source;
+            
+            cityInfo.querySelectorAll('.transportation-buttons button').forEach(button => {
+                button.classList.toggle('active', button.dataset.type === currentTransport);
+                button.addEventListener('click', () => setTransportation(selectedCity, button.dataset.type));
+            });
+            
+            cityInfo.querySelectorAll('.energy-buttons button').forEach(button => {
+                button.classList.toggle('active', button.dataset.type === currentEnergy);
+                button.addEventListener('click', () => setEnergySource(selectedCity, button.dataset.type));
+            });
+            
+            // 清空旧内容并添加新内容
+            cityDetails.innerHTML = '';
+            cityDetails.appendChild(cityInfo);
+            
+            // 初始化图表
+            initCityChart(selectedCity);
+        }
+        
+        // 初始化城市图表
+        function initCityChart(cityId) {
+            const city = gameState.cities[cityId];
+            const ctx = cityDetails.querySelector('.city-chart').getContext('2d');
+            
+            // 获取预期变化
+            const projectedEffects = gameState.current_round_changes?.projected_effects?.[cityId] || {
+                money: 0, 
+                happiness: 0, 
+                co2: 0
+            };
+            
+            // 获取当前设置
+            const currentTransport = gameState.current_round_changes?.transportation?.[cityId] || city.transportation;
+            const currentEnergy = gameState.current_round_changes?.energy_source?.[cityId] || city.energy_source;
+            
+            // 销毁旧的图表实例
+            if (cityCharts[cityId]) {
+                cityCharts[cityId].destroy();
+            }
+            
+            cityCharts[cityId] = new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: ['经济', '幸福度', '环境', '交通', '能源'],
-                    datasets: [{
-                        label: '城市状态',
-                        data: [gameState.money/20, gameState.happiness, 100-gameState.co2, 50, 50],
-                        backgroundColor: 'rgba(46, 204, 113, 0.2)',
-                        borderColor: 'rgba(46, 204, 113, 1)',
-                        pointBackgroundColor: 'rgba(46, 204, 113, 1)',
-                        pointBorderColor: '#fff',
-                        pointHoverBackgroundColor: '#fff',
-                        pointHoverBorderColor: 'rgba(46, 204, 113, 1)'
-                    }]
+                    labels: ['幸福度', '环保', '交通', '能源'],
+                    datasets: [
+                        {
+                            label: `${city.name} 当前状态`,
+                            data: [
+                                city.happiness,
+                                100 - city.co2,
+                                getTransportationScore(city.transportation),
+                                getEnergyScore(city.energy_source)
+                            ],
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            pointBackgroundColor: 'rgba(52, 152, 219, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(52, 152, 219, 1)'
+                        },
+                        {
+                            label: `${city.name} 预期状态`,
+                            data: [
+                                Math.max(0, Math.min(100, city.happiness + projectedEffects.happiness)),
+                                Math.max(0, Math.min(100, 100 - (city.co2 + projectedEffects.co2))),
+                                getTransportationScore(currentTransport),
+                                getEnergyScore(currentEnergy)
+                            ],
+                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                            borderColor: 'rgba(46, 204, 113, 1)',
+                            pointBackgroundColor: 'rgba(46, 204, 113, 1)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(46, 204, 113, 1)'
+                        }
+                    ]
                 },
                 options: {
                     scales: {
@@ -434,100 +776,98 @@
             });
         }
         
+        // 获取交通方式评分
+        function getTransportationScore(transportation) {
+            const scores = {
+                "bicycle": 90,
+                "scooter": 85,
+                "electronic_car": 75,
+                "electronic_bus": 80,
+                "train": 70,
+                "bus": 60,
+                "car": 40,
+                "airplane": 20,
+                "potogan": 100
+            };
+            return scores[transportation] || 50;
+        }
+        
+        // 获取能源评分
+        function getEnergyScore(energy) {
+            const scores = {
+                "solar": 90,
+                "wind": 85,
+                "water": 80,
+                "nuclear": 70,
+                "automic": 85,
+                "anti_material": 95,
+                "mining": 30
+            };
+            return scores[energy] || 50;
+        }
+        
         // 更新UI
         function updateUI() {
+            yearElement.textContent = gameState.year;
             moneyElement.textContent = gameState.money;
-            happinessElement.textContent = gameState.happiness;
-            co2Element.textContent = gameState.co2;
             
-            // 更新进度条
+            // 更新金钱进度条
             document.querySelector('.progress-fill.money').style.width = `${Math.min(100, gameState.money/10)}%`;
-            document.querySelector('.progress-fill.happiness').style.width = `${gameState.happiness}%`;
-            document.querySelector('.progress-fill.co2').style.width = `${gameState.co2}%`;
             
-            // 更新按钮状态
-            document.querySelectorAll('#transportation-buttons button').forEach(button => {
-                button.classList.toggle('active', button.dataset.type === gameState.transportation);
-            });
-            
-            document.querySelectorAll('#energy-buttons button').forEach(button => {
-                button.classList.toggle('active', button.dataset.type === gameState.energy_source);
-            });
-            
-            // 更新图表
-            if (cityChart) {
-                cityChart.data.datasets[0].data = [
-                    Math.min(100, gameState.money/20),
-                    gameState.happiness,
-                    100 - gameState.co2,
-                    Object.keys(TRANSPORTATION_EFFECTS).indexOf(gameState.transportation) * 10 + 30,
-                    Object.keys(ENERGY_EFFECTS).indexOf(gameState.energy_source) * 10 + 30
-                ];
-                cityChart.update();
+            // 更新地图标记
+            for (const [cityId, city] of Object.entries(gameState.cities)) {
+                const marker = document.getElementById(`marker-${cityId}`);
+                if (marker) {
+                    marker.classList.toggle('eliminated', city.eliminated);
+                }
             }
+            
+            // 如果当前选中的城市被淘汰，清除选择
+            if (selectedCity && gameState.cities[selectedCity].eliminated) {
+                selectedCity = null;
+            }
+            
+            // 更新城市详情
+            updateCityDetails();
             
             // 检查游戏结束
             if (gameState.game_over) {
                 let message = "游戏结束！";
-                if (gameState.money <= 0) message += " 城市破产了。";
-                if (gameState.happiness <= 0) message += " 市民非常不满。";
-                if (gameState.co2 >= 100) message += " 环境污染达到灾难级别。";
+                if (gameState.money <= 0) message += " 国家破产了。";
+                
+                // 检查被淘汰的城市
+                const eliminatedCities = Object.entries(gameState.cities)
+                    .filter(([id, city]) => city.eliminated)
+                    .map(([id, city]) => city.name);
+                
+                if (eliminatedCities.length > 0) {
+                    message += ` 以下城市被淘汰: ${eliminatedCities.join(', ')}。`;
+                }
+                
+                if (Object.values(gameState.cities).every(city => city.eliminated)) {
+                    message += " 所有城市都被淘汰了。";
+                }
                 
                 gameOverMessage.textContent = message;
                 gameOverScreen.style.display = "flex";
             }
         }
         
-        // 获取游戏状态
-        async function fetchGameState() {
+        // 进入下一回合
+        async function nextRound() {
             try {
-                const response = await fetch('http://localhost:8000/state');
-                const data = await response.json();
-                gameState = data;
-                updateUI();
-            } catch (error) {
-                console.error('Error fetching game state:', error);
-            }
-        }
-        
-        // 设置交通方式
-        async function setTransportation(type) {
-            try {
-                const response = await fetch(`http://localhost:8000/action/transportation/${type}`, {
+                const response = await fetch('http://localhost:8000/next-round', {
                     method: 'POST'
                 });
                 const data = await response.json();
-                gameState = data.state;
-                updateUI();
-            } catch (error) {
-                console.error('Error setting transportation:', error);
-            }
-        }
-        
-        // 设置能源来源
-        async function setEnergySource(type) {
-            try {
-                const response = await fetch(`http://localhost:8000/action/energy/${type}`, {
-                    method: 'POST'
-                });
-                const data = await response.json();
-                gameState = data.state;
-                updateUI();
-            } catch (error) {
-                console.error('Error setting energy source:', error);
-            }
-        }
-        
-        // 获取新闻事件
-        async function getNews() {
-            try {
-                const response = await fetch('http://localhost:8000/news');
-                const news = await response.json();
                 
-                if (news.message) {
-                    alert(news.message);
+                if (data.message) {
+                    alert(data.message);
                     return;
                 }
+                
+                gameState = data.state;
+                const news = data.news;
                 
                 // 显示新闻
                 const newsCard = document.createElement('div');
@@ -547,21 +887,70 @@
                         const sign = news.effects.co2 > 0 ? '+' : '';
                         effectsHTML += `<div class="effect">CO2: ${sign}${news.effects.co2}</div>`;
                     }
+                    if (news.effects.city) {
+                        effectsHTML += `<div class="effect">影响城市: ${gameState.cities[news.effects.city].name}</div>`;
+                    } else {
+                        effectsHTML += `<div class="effect">影响: 全国</div>`;
+                    }
                 }
                 
                 newsCard.innerHTML = `
-                    <div class="news-title">${news.title}</div>
+                    <div class="news-title">第${gameState.year}年: ${news.title}</div>
                     <div class="news-description">${news.description}</div>
                     <div class="effects">${effectsHTML}</div>
                 `;
                 
                 newsContainer.prepend(newsCard);
-                
-                // 更新游戏状态
-                await fetchGameState();
+                updateUI();
                 
             } catch (error) {
-                console.error('Error getting news:', error);
+                console.error('Error advancing round:', error);
+            }
+        }
+        
+        // 获取游戏状态
+        async function fetchGameState() {
+            try {
+                const response = await fetch('http://localhost:8000/state');
+                const data = await response.json();
+                gameState = data;
+                updateUI();
+            } catch (error) {
+                console.error('Error fetching game state:', error);
+            }
+        }
+        
+        // 设置交通方式 - 现在只预览效果而不立即应用
+        async function setTransportation(cityId, type) {
+            try {
+                const response = await fetch(`http://localhost:8000/action/transportation/${cityId}/${type}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                gameState = data.state;
+                
+                // 更新UI以显示预览效果
+                updateUI();
+                
+            } catch (error) {
+                console.error('Error setting transportation:', error);
+            }
+        }
+        
+        // 设置能源来源 - 现在只预览效果而不立即应用
+        async function setEnergySource(cityId, type) {
+            try {
+                const response = await fetch(`http://localhost:8000/action/energy/${cityId}/${type}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                gameState = data.state;
+                
+                // 更新UI以显示预览效果
+                updateUI();
+                
+            } catch (error) {
+                console.error('Error setting energy source:', error);
             }
         }
         
@@ -574,8 +963,19 @@
                 const data = await response.json();
                 gameState = data.state;
                 
-                // 清空新闻
-                newsContainer.innerHTML = '<h2>最新新闻</h2>';
+                // 确保每个城市的eliminated状态被重置
+                for (const cityId in gameState.cities) {
+                    gameState.cities[cityId].eliminated = false;
+                }
+                
+                // 清空新闻并添加欢迎消息
+                addWelcomeMessage();
+                
+                // 清除选中的城市
+                selectedCity = null;
+                
+                // 重新初始化城市标记
+                initCityMarkers();
                 
                 // 隐藏游戏结束屏幕
                 gameOverScreen.style.display = "none";
@@ -587,25 +987,35 @@
         }
         
         // 事件监听器
-        document.querySelectorAll('#transportation-buttons button').forEach(button => {
-            button.addEventListener('click', () => {
-                setTransportation(button.dataset.type);
-            });
-        });
-        
-        document.querySelectorAll('#energy-buttons button').forEach(button => {
-            button.addEventListener('click', () => {
-                setEnergySource(button.dataset.type);
-            });
-        });
-        
-        getNewsButton.addEventListener('click', getNews);
+        nextRoundButton.addEventListener('click', nextRound);
         restartButton.addEventListener('click', restartGame);
         restartGameButton.addEventListener('click', restartGame);
         
+        // 修改欢迎信息以说明预览系统
+        function addWelcomeMessage() {
+            const welcomeCard = document.createElement('div');
+            welcomeCard.className = 'news-card';
+            welcomeCard.innerHTML = `
+                <div class="news-title">欢迎来到瑞典城市可持续发展游戏</div>
+                <div class="news-description">
+                    作为瑞典国家管理者，您的任务是平衡经济发展、市民幸福度和环境保护。
+                    每回合您可以为各个城市选择不同的交通方式和能源来源，系统将预览效果但不会立即应用。
+                    点击"下一回合"按钮应用所有变更并进入下一年度。每年都会发生新的事件，请做出明智的决策！
+                </div>
+                <div class="effects">
+                    <div class="effect">目标：保持国家金钱 > 0</div>
+                    <div class="effect">目标：防止城市幸福度降至 0</div>
+                    <div class="effect">目标：防止城市CO2达到 100</div>
+                </div>
+            `;
+            newsContainer.innerHTML = '';
+            newsContainer.appendChild(welcomeCard);
+        }
+        
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
-            initChart();
+            initCityMarkers();
+            addWelcomeMessage();
             updateUI();
         });
     </script>
