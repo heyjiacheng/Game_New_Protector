@@ -100,38 +100,38 @@ if news_service_available:
 NEWS_EVENTS = [
     {
         "type": "natural_disaster",
-        "title": "自然灾害",
-        "description": "瑞典北部遭遇罕见洪水，基础设施受损",
+        "title": "Natural Disaster",
+        "description": "Rare floods hit northern Sweden, damaging infrastructure",
         "effects": {"money": -200, "happiness": -10, "city": None}
     },
     {
         "type": "city_construction",
-        "title": "城市建设",
-        "description": "斯德哥尔摩新建环保住宅区",
+        "title": "City Construction",
+        "description": "Stockholm builds new eco-friendly residential area",
         "effects": {"co2": 5, "money": -150, "happiness": 8, "city": "stockholm"}
     },
     {
         "type": "economy_plus",
-        "title": "经济利好",
-        "description": "瑞典科技产业蓬勃发展，创造大量就业机会",
+        "title": "Economic Growth",
+        "description": "Swedish tech industry flourishes, creating many job opportunities",
         "effects": {"money": 300, "happiness": 7, "co2": 3, "city": None}
     },
     {
         "type": "economy_minus",
-        "title": "经济衰退",
-        "description": "全球市场波动影响瑞典出口",
+        "title": "Economic Downturn",
+        "description": "Global market fluctuations impact Swedish exports",
         "effects": {"money": -250, "happiness": -8, "co2": -2, "city": None}
     },
     {
         "type": "sustainability_event",
-        "title": "可持续发展活动",
-        "description": "哥德堡举办国际环保会议，推广绿色技术",
+        "title": "Sustainability Initiative",
+        "description": "Gothenburg hosts international environmental conference promoting green technology",
         "effects": {"co2": -15, "city": "gothenburg"}
     },
     {
         "type": "entertainment_news",
-        "title": "娱乐盛事",
-        "description": "马尔默音乐节吸引全球游客，城市充满活力",
+        "title": "Entertainment Event",
+        "description": "Malmö music festival attracts global visitors, energizing the city",
         "effects": {"happiness": 12, "city": "malmo"}
     }
 ]
@@ -141,42 +141,42 @@ CITY_SPECIFIC_NEWS = {
     "stockholm": [
         {
             "type": "local_event",
-            "title": "斯德哥尔摩创新中心",
-            "description": "斯德哥尔摩新建技术创新中心，吸引全球人才",
+            "title": "Stockholm Innovation Center",
+            "description": "Stockholm builds a new technology innovation center, attracting global talent",
             "effects": {"happiness": 8, "co2": 5, "money": -100}
         },
         {
             "type": "local_disaster",
-            "title": "斯德哥尔摩严寒",
-            "description": "斯德哥尔摩遭遇极寒天气，能源消耗大幅增加",
+            "title": "Stockholm Severe Cold",
+            "description": "Stockholm experiences extremely cold weather, significantly increasing energy consumption",
             "effects": {"happiness": -5, "co2": 10, "money": -80}
         }
     ],
     "gothenburg": [
         {
             "type": "local_event",
-            "title": "哥德堡港口扩建",
-            "description": "哥德堡港口扩建工程完成，贸易量大幅增加",
+            "title": "Gothenburg Port Expansion",
+            "description": "Gothenburg port expansion completed, significantly increasing trade volume",
             "effects": {"happiness": 5, "co2": 8, "money": 150}
         },
         {
             "type": "local_disaster",
-            "title": "哥德堡洪水",
-            "description": "哥德堡遭遇洪水袭击，沿海地区受损",
+            "title": "Gothenburg Flooding",
+            "description": "Gothenburg hit by flooding, coastal areas damaged",
             "effects": {"happiness": -8, "co2": 3, "money": -120}
         }
     ],
     "malmo": [
         {
             "type": "local_event",
-            "title": "马尔默可再生能源",
-            "description": "马尔默实施大规模可再生能源计划，城市形象提升",
+            "title": "Malmö Renewable Energy",
+            "description": "Malmö implements large-scale renewable energy plan, improving city image",
             "effects": {"happiness": 10, "co2": -12, "money": -180}
         },
         {
             "type": "local_disaster",
-            "title": "马尔默交通拥堵",
-            "description": "马尔默交通严重拥堵，市民出行困难",
+            "title": "Malmö Traffic Congestion",
+            "description": "Severe traffic congestion in Malmö, citizens face difficulties commuting",
             "effects": {"happiness": -7, "co2": 9, "money": -50}
         }
     ]
