@@ -7,6 +7,15 @@ from datetime import datetime
 import uvicorn
 import copy
 
+# 导入新的AI新闻系统
+try:
+    from news_service import NewsService
+    from config import Config
+    news_service_available = True
+except ImportError:
+    news_service_available = False
+    print("Warning: AI news service not available. Install news_service and config modules for AI functionality.")
+
 app = FastAPI()
 
 # 允许跨域请求
@@ -77,6 +86,15 @@ initial_cities = {
 
 # 初始游戏状态
 game_state = GameState(cities=initial_cities)
+
+# 初始化AI新闻服务
+news_service = None
+if news_service_available:
+    try:
+        news_service = NewsService()
+    except Exception as e:
+        print(f"Warning: Failed to initialize AI news service: {e}")
+        news_service_available = False
 
 # 新闻事件类型
 NEWS_EVENTS = [
@@ -262,27 +280,57 @@ def check_game_over():
     if all_eliminated:
         game_state.game_over = True
 
-def generate_news():
-    """生成随机新闻事件"""
-    # 70%概率生成全国性新闻，30%概率生成城市特定新闻
-    if random.random() < 0.7:
-        news = random.choice(NEWS_EVENTS)
-    else:
-        # 选择一个未被淘汰的城市
-        available_cities = [city_id for city_id, city in game_state.cities.items() if not city.eliminated]
-        if not available_cities:
-            # 如果所有城市都被淘汰，生成全国性新闻
-            news = random.choice(NEWS_EVENTS)
-        else:
-            city_id = random.choice(available_cities)
-            city_news = CITY_SPECIFIC_NEWS.get(city_id, [])
-            if not city_news:
-                news = random.choice(NEWS_EVENTS)
-            else:
-                news = random.choice(city_news)
-                news["effects"]["city"] = city_id
+def generate_news(use_ai=False, news_type=None, severity=None, force_ai=False):
+    """生成新闻事件，支持AI和传统新闻"""
+    news = None
     
-    news["timestamp"] = datetime.now().isoformat()
+    # 如果请求使用AI且AI服务可用
+    if (use_ai or force_ai) and news_service_available and news_service:
+        try:
+            if news_type:
+                news_event = news_service.generate_news(news_type=news_type)
+            elif severity:
+                news_event = news_service.generate_news_by_severity(severity)
+            else:
+                news_event = news_service.generate_news(force_ai=force_ai)
+            
+            # 将AI新闻事件转换为字典格式
+            news = {
+                "type": news_event.type,
+                "title": news_event.title,
+                "description": news_event.description,
+                "effects": news_event.effects,
+                "timestamp": news_event.timestamp,
+                "source": "AI"
+            }
+        except Exception as e:
+            print(f"AI news generation failed: {e}")
+            # 如果AI生成失败，回退到传统新闻
+            news = None
+    
+    # 如果没有使用AI或AI生成失败，使用传统新闻生成
+    if not news:
+        # 70%概率生成全国性新闻，30%概率生成城市特定新闻
+        if random.random() < 0.7:
+            news = random.choice(NEWS_EVENTS).copy()
+        else:
+            # 选择一个未被淘汰的城市
+            available_cities = [city_id for city_id, city in game_state.cities.items() if not city.eliminated]
+            if not available_cities:
+                # 如果所有城市都被淘汰，生成全国性新闻
+                news = random.choice(NEWS_EVENTS).copy()
+            else:
+                city_id = random.choice(available_cities)
+                city_news = CITY_SPECIFIC_NEWS.get(city_id, [])
+                if not city_news:
+                    news = random.choice(NEWS_EVENTS).copy()
+                else:
+                    news = random.choice(city_news).copy()
+                    news["effects"]["city"] = city_id
+        
+        news["timestamp"] = datetime.now().isoformat()
+        news["source"] = "Traditional"
+    
     game_state.last_news = news
     
     # 应用新闻效果
@@ -419,7 +467,7 @@ def next_round():
     # 清除当前回合的更改
     game_state.current_round_changes = RoundChanges()
     
-    # 生成新闻
+    # 生成新闻（默认使用传统新闻，可以通过其他端点获取AI新闻）
     news = generate_news()
     
     return {"news": news, "year": game_state.year, "state": game_state}
@@ -432,6 +480,92 @@ def get_news():
     
     news = generate_news()
     return news
+
+# ===== AI新闻相关端点 =====
+
+@app.get("/news/ai")
+def get_ai_news():
+    """获取AI生成的新闻事件并更新状态"""
+    if game_state.game_over:
+        return {"message": "Game over! Please restart the game."}
+    
+    if not news_service_available or not news_service:
+        raise HTTPException(status_code=503, detail="AI news service not available")
+    
+    news = generate_news(use_ai=True)
+    return news
+
+@app.get("/news/type/{news_type}")
+def get_specific_news(news_type: str):
+    """获取特定类型的新闻"""
+    if game_state.game_over:
+        return {"message": "Game over! Please restart the game."}
+    
+    if not news_service_available or not news_service:
+        raise HTTPException(status_code=503, detail="AI news service not available")
+    
+    try:
+        news = generate_news(use_ai=True, news_type=news_type)
+        return news
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/news/severity/{severity}")
+def get_news_by_severity(severity: str):
+    """根据严重程度获取新闻"""
+    if game_state.game_over:
+        return {"message": "Game over! Please restart the game."}
+    
+    if severity not in ["low", "medium", "high"]:
+        raise HTTPException(status_code=400, detail="Severity must be 'low', 'medium', or 'high'")
+    
+    if not news_service_available or not news_service:
+        raise HTTPException(status_code=503, detail="AI news service not available")
+    
+    news = generate_news(use_ai=True, severity=severity)
+    return news
+
+@app.get("/news/force-ai")
+def get_force_ai_news():
+    """强制使用AI生成新闻（用于测试）"""
+    if game_state.game_over:
+        return {"message": "Game over! Please restart the game."}
+    
+    if not news_service_available or not news_service:
+        raise HTTPException(status_code=503, detail="AI news service not available")
+    
+    news = generate_news(force_ai=True)
+    return news
+
+@app.get("/news/statistics")
+def get_news_statistics():
+    """获取新闻系统统计信息"""
+    if not news_service_available or not news_service:
+        raise HTTPException(status_code=503, detail="AI news service not available")
+    
+    return news_service.get_news_statistics()
+
+@app.post("/config/api-key")
+def set_api_key(api_key: str):
+    """设置OpenAI API密钥"""
+    if not news_service_available:
+        raise HTTPException(status_code=503, detail="AI news service not available")
+    
+    Config.set_api_key(api_key)
+    global news_service
+    news_service = NewsService()  # 重新初始化新闻服务
+    return {"message": "API key updated", "ai_enabled": news_service.ai_generator is not None}
+
+@app.get("/test/ai")
+def test_ai():
+    """测试AI新闻生成功能"""
+    if not news_service_available or not news_service:
+        return {"ai_test_passed": False, "message": "AI news service not available"}
+    
+    success = news_service.test_ai_generation()
+    return {"ai_test_passed": success}
+
+# ===== 传统游戏端点保持不变 =====
 
 @app.post("/restart")
 def restart_game():
